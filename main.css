@@ -1,0 +1,99 @@
+*{
+    font-family: arial;
+}
+body{
+    position: relative;
+}
+
+.sessions-one-day{
+    border: 2px solid #e1e1e1;
+    width: 20rem;
+    height: 20rem;
+    padding: 1rem;
+    display: grid;
+    grid-template-areas: "1fr 1fr 1fr";
+    grid-gap: 1rem;
+    justify-content: space-around;
+}
+
+
+#present_date_title{
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.week-sessions{
+    height: 374px;
+    width: 356px;
+    overflow: hidden;
+}
+
+.conveyor{ 
+    display: flex; 
+    transition: .5s;
+}
+
+.wrapper-area{
+    width: fit-content;
+    margin: 0 auto;
+    position: relative;
+}
+
+.arrow-left, 
+.arrow-right{
+    content: "";
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    z-index: 1;
+    bottom: 0;
+    top: 0;
+    margin: auto 0;
+    cursor: pointer;
+    transition: .3s;
+    background-image: url("./arrows.svg");
+}
+
+.arrow-left:hover, .arrow-right:hover { opacity: .5; }
+
+.arrow-left{ left: -60px; }
+
+.arrow-right{
+    transform: rotate(180deg);
+    right: -60px;
+}
+
+.passed{
+    background-color: #ff6a6a !important;
+    border-radius: 10px;
+}
+
+.hour{
+    height: fit-content;
+    padding: 15px 20px;
+    background-color: yellow;
+    border-radius: 5px;
+    cursor: pointer;
+    color: black;
+    font-size: 25px;
+}
+
+.wrapperDay{ width: fit-content; }
+
+.popup{
+    background-color: aqua;
+    border-radius: 5px;
+    position: absolute;
+    opacity: 0;
+    transition: .5s;
+    text-align: center;
+    color: white;
+    font-size: 22px;
+    height: fit-content;
+    z-index: 5;
+}
+
+.present-date{
+    font-size: 20px;
+    font-weight: bold;
+}
