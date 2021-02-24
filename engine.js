@@ -1,3 +1,21 @@
+//ОЧЕНЬ ВАЖНОЕ ЗАМЕЧАНИЕ!!! Если вы понижаете дату, то тут программа слетает с условий, и начинает
+//прибавлять к периоду не определенный срок, и чтобы дойти до указанной даты, нужно обновлять страницу
+//не определенное кол-во раз. Если такое произошло, то просто снесите кэш и обновите страницу.
+//Баг только в рамках теста, и ТОЛЬКО при снижении, так как в реальной жизни, даты не снижаются =)
+
+
+//указываем желаемую дату, которая будет взята за основу сегодняшнего дня (для теста)
+//чтобы взять за основу сегодняшнюю дату, то оставляем пустую строку
+//гг-мм-дд, чч:мм:сс
+
+//live
+const myDate = '',
+      myTime = '10:00:00'
+
+//ваше условие
+// const myDate = '2012-12-05',
+//       myTime = '10:00:00'
+
 //Максимум билетов на один сеанс 10
 const _MAX_TICKETS = 10;
 
@@ -7,13 +25,18 @@ const _MAX_TICKETS = 10;
 //т.е при каждом обновлении страницы будет происходить апдейт + 7 дней
 //до сегодняшнего дня. Используется для теста. Больше 20 не имеет смысла
 //по умолчанию значение 7. одна неделя
-const _BEFORE_DAYS = 7;
+const _BEFORE_DAYS = 7
 
+
+
+const _NOW_DATE = Date.parse(`${myDate}T${myTime}`) || Date.now();
 
 (function init(){
 
     let workCache = localStorage.getItem("cache"),
         workWeek  = []
+
+    workCache = JSON.parse(workCache)
 
     if(!workCache){
 
@@ -28,7 +51,7 @@ const _BEFORE_DAYS = 7;
     }else{
 
         //важно! сначала обновить
-        updateLocal()
+        updateLocal(init)
 
         aggregateCardsForPage()
     }
@@ -40,7 +63,7 @@ const _BEFORE_DAYS = 7;
 function aggregateCardsForPage(){
 
     const area = document.querySelector('#conveyor'),
-          DATE = new Date(Date.now()).getDate()
+          DATE = new Date(_NOW_DATE).getDate()
 
     let workCache = localStorage.getItem("cache")
         workCache = JSON.parse(workCache),
@@ -50,8 +73,17 @@ function aggregateCardsForPage(){
 
     const result = workCache.map((day, index) => {
 
-        if(DATE > day[0].day || index < 7) accessDay = 'passed'
-            else accessDay = ''
+
+        if(
+            (DATE > day[0].day && index < 7 || DATE < day[0].day && index < 7)
+            ||
+            (DATE < day[0].day && index > 14)
+        ){
+
+                accessDay = 'passed'
+            }else{
+                accessDay = ''
+            }
 
         return `<div class="wrapperDay">
                     <div id="present_date_title" class="present-date">Дата ${day[0].fullDate}</div>
@@ -153,10 +185,9 @@ function addNewTicket(){
 
     const hourTicket = +this.innerText,
           dateTicket = +this.parentNode.getAttribute('id_date'),
-          DATE       = Date.now(),
+          DATE       = _NOW_DATE,
           NOW_HOUR   = new Date(DATE).getHours(),
           NOW_DAY    = new Date(DATE).getDate()
-        
 
     let workCache  = localStorage.getItem("cache"),
         tickets    = [],
@@ -179,7 +210,14 @@ function addNewTicket(){
 
                 if(tickets.length !== _MAX_TICKETS){
 
-                    if((NOW_DAY === sess.day && NOW_HOUR < sess.hour) || NOW_DAY < sess.day){
+
+                    console.log(NOW_HOUR)
+
+                    if(
+                        (NOW_DAY === sess.day && NOW_HOUR < sess.hour)
+                        ||
+                        ((NOW_DAY < sess.day || NOW_DAY > sess.day) && DATE < sess.date)
+                    ){
 
                         if(findMember){
                             alert('Вы уже купили билет на этот сеанс!')
@@ -223,34 +261,55 @@ function addNewTicket(){
 }
 
 
-function updateLocal(){
+function updateLocal(init){
 
-    const DATE = Date.now()
+    const DATE = _NOW_DATE,
+       NOW_DAY = new Date(DATE).getDate(),
+       HOURS24 = 86400000
 
     let workCache = localStorage.getItem("cache"),
-        workedOut = []
+        workedOut = [],
+        posOldDay = null,
+        workWeek  = {}
 
     workCache = JSON.parse(workCache)
+
+
+    workCache.forEach((day, index) => {
+        if(day[0].day === NOW_DAY && day[0].date > DATE - HOURS24 * 7){
+
+            posOldDay = index
+        }
+    })
+
 
     //забираем отработанные дни с действующего периода - после 7-го индекса
     workCache.forEach((day, index)=> {
 
         for(let sess of day){
-
-            if(index > 7 && sess.date < DATE){
+            
+            if(index >= 7 && posOldDay !== 7 && posOldDay !== null){
 
                 workedOut.push(day)
-                break
+                posOldDay--
+
             }
+            break
         }
     })
-    
+
+    if(posOldDay === null){
+        
+        delete localStorage.cache
+        init()
+        // setTimeout(init, 100)
+    }
+
 
     const countOldDays = workedOut.length
 
-    //если 1 то все ок, если больше то смещаем 
-    //индексы и добавляем новые элементы в конце
-    if(countOldDays > 1){
+    //смещаем индексы и добавляем новые элементы в конце
+    if(countOldDays >= 1){
 
         //забираем последнюю дату из основного массива объектов
         //для дальнейшего смещения
@@ -273,7 +332,7 @@ function fillArrayByPattern(quantity = 14, lastDate = null){
 
     const INIT_START_HOUR = 10,
           HOURS24 = 86400000,
-          DATE = lastDate || Date.now()
+          DATE = lastDate || _NOW_DATE
 
 
     let daySess  = [],
